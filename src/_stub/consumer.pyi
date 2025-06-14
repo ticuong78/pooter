@@ -1,0 +1,9 @@
+from typing import Optional
+from broker import Broker
+
+class Consumer:
+    uuid: str
+
+    def __init__(self, uuid: Optional[str] = ...) -> None: ...
+    def register(self, broker: Broker) -> None: ...
+    async def consume(self) -> None: ...
