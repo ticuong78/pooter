@@ -11,39 +11,27 @@ from src.archi.consumer import Consumer
 logging.basicConfig(level=logging.INFO)
 
 async def main():
-    # 1. Create the broker
-    broker = Broker(timeout_ms=1000)
+    broker = Broker(timeout=1.0)
 
-    # 2. Create emitters
     emitter1 = Emitter()
     emitter2 = Emitter()
+    consumer1 = Consumer()
+    consumer2 = Consumer()
 
-    # 3. Create a consumer
-    consumer = Consumer()
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
+    broker.register_consumer(consumer1)
+    broker.register_consumer(consumer2)
 
-    # 4. Register emitters and consumers with the broker
-    broker.register_emitter([emitter1, emitter2])
-    broker.register_consumer(consumer)
-
-    # 5. Configure emitter2 to resolve itself after some time
-    def auto_resolve():
-        print(f"[Emitter {emitter2.uuid}] auto-resolving after delay")
+    # Use the awaited API (Option A)
+    emit_task = emitter1.emit()  # async def emit()
     
-    emitter2.internal_resolve = auto_resolve
-
-    async def delayed_resolve():
-        await asyncio.sleep(0.5)
+    # Resolve the other emitter after delay
+    async def delayed():
+        await asyncio.sleep(0.3)
         emitter2.resolve()
 
-    # 6. Trigger emitter1
-    print(f"[Main] Triggering emitter1.emit()")
-    emitter1.emit()
-
-    # 7. Start the delayed resolution of emitter2
-    asyncio.create_task(delayed_resolve())
-
-    # 8. Give enough time for everything to resolve
-    await asyncio.sleep(2)
+    await asyncio.gather(delayed(), emit_task) 
 
 if __name__ == "__main__":
     asyncio.run(main())
