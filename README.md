@@ -1,6 +1,6 @@
-# Pooter 🧠⚡ — Async Event Coordination System
+# Pooter — Async Event Coordination System
 
-![Test Status](https://github.com/ticuong78/pooter/actions/workflows/python-tests.yml/badge.svg)
+![Test Status](https://github.com/ticuong78/pooter/actions/workflows/module-test.yml/badge.svg)
 ![License](https://img.shields.io/github/license/ticuong78/pooter)
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![PyPI - Version](https://img.shields.io/pypi/v/pooter)
@@ -124,5 +124,32 @@ MIT License.
 Created by **Lê Cường** — [cuongdayne17@gmail.com](mailto:cuongdayne17@gmail.com)
 
 ---
+
+## Contributing
+
+Contributions are welcome and encouraged.
+
+If you'd like to contribute to `pooter`, please follow these steps:
+
+1. **Fork** the repository
+2. Create a new branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. Write clear, tested code
+4. Follow existing code style (`black`, `ruff`, `mypy`)
+5. Submit a Pull Request with a clear description
+
+Please make sure all tests pass before submitting:
+
+```bash
+pytest
+```
+
+To run style checks:
+
+```bash
+black . && ruff . && mypy src/
+```
 
 > For ideas, bugs, or PRs, visit: [github.com/ticuong78/pooter](https://github.com/ticuong78/pooter)
