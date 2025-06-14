@@ -125,7 +125,7 @@ Created by **Lê Cường** — [cuongdayne17@gmail.com](mailto:cuongdayne17@gma
 
 ---
 
-## Contributing
+## 🛠️ Contributing
 
 Contributions are welcome and encouraged.
 
