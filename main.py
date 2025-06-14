@@ -15,6 +15,10 @@ async def main():
 
     emitter1 = Emitter()
     emitter2 = Emitter()
+
+    # decide what the Emitters do on resolve_callback
+    emitter2.resolve_callback = lambda uuid=emitter2.uuid: print(f"[Emitter {uuid}] internal resolved.") 
+
     consumer1 = Consumer()
     consumer2 = Consumer()
 
