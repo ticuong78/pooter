@@ -30,3 +30,6 @@ class Emitter:
             self.resolve_callback()
         self._resolved.set()
         print(f"[Emitter {self.uuid}] resolving...")
+
+
+__all__ = ("Emitter",)

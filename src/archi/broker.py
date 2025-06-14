@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.archi.emitter import Emitter
 from src.archi.consumer import Consumer
-from src.archi.events import EventBus
+from src.archi.event import EventBus
 
 class Broker:
     def __init__(self, timeout: float = 1.0, event_bus: Optional[EventBus] = None):
@@ -33,3 +33,4 @@ class Broker:
             self.emitted.clear()
             print(f"[Broker] Error during coordination: {e}")
 
+__all__ = ("Broker",)

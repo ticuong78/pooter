@@ -11,3 +11,5 @@ class Consumer:
 
     async def consume(self):
         logger.info(f"[Consumer {self.uuid}] Consuming...")
+
+__all__ = ("Consumer",)

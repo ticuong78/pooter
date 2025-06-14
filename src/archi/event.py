@@ -21,3 +21,5 @@ class EventBus:
                 tasks.append(asyncio.to_thread(handler))
 
         await asyncio.gather(*tasks)
+
+__all__ = ("EventBus",)
