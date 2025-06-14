@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=80.7.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pooter"
+version = "0.1.0"
+description = "Async coordination system using Broker-Emitter-Consumer with testing, we simply call it: \"Event Architecture based on Promises\""
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{ name = "Lê Cường", email = "cuongdayne17@gmail.com" }]
+keywords = ["broker", "emitter", "eventbus", "async", "coordination", "fastapi", "promise", "architecture"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Application Frameworks"
+]
+
+dependencies = [
+    "colorama==0.4.6",
+    "iniconfig==2.1.0",
+    "packaging==25.0",
+    "pluggy==1.6.0",
+    "Pygments==2.19.1",
+    "pytest==8.4.0",
+    "pytest-asyncio==1.0.0",
+    "uuid6==2025.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0"
+]
+
+[tool.setuptools]
+packages = ["archi"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F"]
+ignore = ["E501"]
