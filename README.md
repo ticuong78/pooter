@@ -11,7 +11,7 @@ Pooter is an **asynchronous coordination system** built on a simple but powerful
 
 We call this _"Event Architecture based on Promises"_ — where multiple `Emitter`s notify a `Broker`, which then synchronizes and dispatches events to `Consumer`s once all conditions are fulfilled.
 
-This pattern works on let an `Emitter` emits the `Broker` then the `Broker` puts all of the other `Emitter`s into the same **Promise**s, which they promise to give give back the same signal (which is **emit**).
+This pattern works on letting an `Emitter` emits the `Broker` then the `Broker` puts all of the other `Emitter`s into the same **Promise**s, which they promise to give give back the same signal (which is **emit**).
 
 If all resolve, the promising section is finished, otherwise, it's cancelled by the `Broker`.
 
