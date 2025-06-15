@@ -16,8 +16,18 @@ class Emitter:
     async def emit(self):
         if not self.broker:
             raise RuntimeError("Emitter has no broker.")
-        print(f"[Emitter {self.uuid}] emitting...")
-        await self.broker.collect_emit(self.uuid)
+
+        # First emitter: begin coordination
+        if not self.broker.opened_section:
+            print(f"[Emitter {self.uuid}] emitting (starting session)...")
+            await self.broker.collect_emit(self.uuid)
+        else:
+            # Called during a session — resolve immediately
+            
+            async def wrapper():
+                self._resolve()
+
+            await wrapper()
 
     async def await_resolution(self, timeout: float):
         try:
@@ -25,11 +35,11 @@ class Emitter:
         except asyncio.TimeoutError:
             raise TimeoutError(f"Emitter {self.uuid} timed out")
 
-    def resolve(self):
+    def _resolve(self):
         if self.resolve_callback:
             self.resolve_callback()
         self._resolved.set()
-        print(f"[Emitter {self.uuid}] resolving...")
+        print(f"[Emitter {self.uuid}] resolving (finishing session)...")
 
 
 __all__ = ("Emitter",)

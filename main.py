@@ -24,14 +24,14 @@ async def main():
     broker.register_consumer(consumer2)
 
     # Use the awaited API (Option A)
-    emit_task = emitter1.emit()  # async def emit()
+    emitter1_task = emitter1.emit()  # async def emit()
     
     # Resolve the other emitter after delay
     async def delayed():
         await asyncio.sleep(0.3)
-        emitter2.resolve()
+        await emitter2.emit()
 
-    await asyncio.gather(delayed(), emit_task) 
+    await asyncio.gather(delayed(), emitter1_task) 
 
 if __name__ == "__main__":
     asyncio.run(main())
