@@ -82,7 +82,7 @@ async def main():
         await asyncio.sleep(0.3)
         await emitter2.emit()
 
-    await asyncio.gather(delayed(), emitter1_task) 
+    await asyncio.gather(delayed(), emitter1_task)
 
 if __name__ == "__main__":
     asyncio.run(main())
