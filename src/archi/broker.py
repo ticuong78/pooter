@@ -35,6 +35,15 @@ class Broker:
             task = asyncio.create_task(self._wait_and_collect(emitter))
             self._emitter_tasks[emitter.uuid] = task
 
+    def unregister_emitter(self, emitter: Emitter):
+        self.emitters.pop(emitter.uuid)
+
+    def get_emitter(self, uuid: str) -> Emitter | None:
+        return self.emitters[uuid]
+
+    def get_all_emitters(self) -> list[Emitter]:
+        return list(self.emitters.values())
+
     def register_consumer(self, consumer: Consumer):
         self.consumers[consumer.uuid] = consumer
         self.event_bus.subscribe("all_resolved", consumer.consume)  # type: ignore
@@ -83,9 +92,10 @@ class Broker:
                 logger.warning(f"[Broker] Not all emitters resolved. Unresolved: {unresolved}")
 
             # Clean up state
+            for uuid in list(self.emitted):
+                self.emitters.pop(uuid, None)
             self._emitter_tasks.clear()
             self.emitted.clear()
-            self.emitters.clear()
 
             logger.info("[Broker] Coordination session closed.")
             return all_resolved
