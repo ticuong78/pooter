@@ -1,18 +1,22 @@
 import asyncio
-from typing import Optional
+from typing import Optional, Callable
 
-from .emitter import Emitter
+from .emitter import Emitter, EmitterFactory
 from .consumer import Consumer
 from .event import EventBus
 
 class Broker:
-    def __init__(self, timeout: float = 1.0, event_bus: Optional[EventBus] = None):
+    def __init__(self, timeout: float = 1.0, event_bus: Optional[EventBus] = None, emitter_factory: Optional[EmitterFactory] = None):
         self.opened_section = False
         self.emitters: dict[str, Emitter] = {}
         self.emitted: set[str] = set()
         self.consumers: dict[str, Consumer] = {}
         self.timeout = timeout
         self.event_bus = event_bus or EventBus()
+        self.emitter_factory = emitter_factory or EmitterFactory()
+
+    def create_emitter(self, resolve_callback: Optional[Callable[[], None]] = None) -> Emitter:
+        return self.emitter_factory.create_emitter(resolve_callback=resolve_callback)
 
     def register_emitter(self, emitter: Emitter):
         self.emitters[emitter.uuid] = emitter

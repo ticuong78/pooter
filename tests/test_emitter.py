@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from src.archi.emitter import Emitter
+from src.archi.emitter import Emitter, EmitterFactory
 from src.archi.broker import Broker
 
 pytestmark = pytest.mark.asyncio
@@ -12,6 +12,25 @@ def test_emitter_uuid_generated():
 def test_emitter_manual_uuid():
     emitter = Emitter(uuid="abc-123")
     assert emitter.uuid == "abc-123"
+
+def test_factory_creates_emitter_with_uuid():
+    emitter = EmitterFactory.create_emitter(uuid="factory-uuid")
+    assert isinstance(emitter, Emitter)
+    assert emitter.uuid == "factory-uuid"
+
+def test_factory_creates_emitter_without_uuid():
+    emitter = EmitterFactory.create_emitter()
+    assert isinstance(emitter, Emitter)
+    assert isinstance(emitter.uuid, str)
+
+def test_factory_sets_resolve_callback():
+    called = False
+    def cb():
+        nonlocal called
+        called = True
+    emitter = EmitterFactory.create_emitter(resolve_callback=cb)
+    emitter._resolve()
+    assert called
 
 @pytest.mark.asyncio
 async def test_emitter_without_broker():

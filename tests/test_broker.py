@@ -118,3 +118,62 @@ async def test_broker_multiple_emitters():
     assert consume_count == 1
     # Section should be closed
     assert not broker.opened_section
+
+@pytest.mark.asyncio
+async def test_broker_registers_multiple_emitters():
+    broker = Broker()
+    emitter1 = Emitter()
+    emitter2 = Emitter()
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
+    assert emitter1.uuid in broker.emitters
+    assert emitter2.uuid in broker.emitters
+    assert emitter1.broker == broker
+    assert emitter2.broker == broker
+
+@pytest.mark.asyncio
+async def test_broker_consumes_with_multiple_emitters():
+    broker = Broker()
+    emitter1 = Emitter()
+    emitter2 = Emitter()
+    consumer = Consumer()
+    triggered = False
+    async def fake_consume():
+        nonlocal triggered
+        triggered = True
+    consumer.consume = fake_consume
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
+    broker.register_consumer(consumer)
+    emit_task1 = asyncio.create_task(emitter1.emit())
+    await asyncio.sleep(0.1)
+    emit_task2 = asyncio.create_task(emitter2.emit())
+    await asyncio.gather(emit_task1, emit_task2)
+    assert triggered
+    assert not broker.opened_section
+
+@pytest.mark.asyncio
+async def test_broker_section_state_with_multiple_emitters():
+    broker = Broker()
+    emitter = Emitter()
+    emitter2 = Emitter()
+    broker.register_emitter(emitter)
+    broker.register_emitter(emitter2)
+    emit_task = asyncio.create_task(emitter.emit())
+    await asyncio.sleep(0.1)
+    assert broker.opened_section
+    emit_task2 = asyncio.create_task(emitter2.emit())
+    await asyncio.gather(emit_task, emit_task2)
+    assert not broker.opened_section
+
+@pytest.mark.asyncio
+async def test_broker_timeout_with_multiple_emitters():
+    broker = Broker(timeout=0.1)
+    emitter1 = Emitter()
+    emitter2 = Emitter()
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
+    emit_task = asyncio.create_task(emitter1.emit())
+    await asyncio.sleep(0.2)
+    assert not broker.opened_section
+    assert not broker.emitted

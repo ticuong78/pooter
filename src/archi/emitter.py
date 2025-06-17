@@ -5,6 +5,14 @@ from uuid6 import uuid7
 
 if TYPE_CHECKING:
     from broker import Broker
+    
+class EmitterFactory:
+    @staticmethod
+    def create_emitter(uuid: Optional[str] = None, resolve_callback: Optional[Callable[[], None]] = None) -> "Emitter":
+        emitter = Emitter(uuid)
+        emitter.resolve_callback = resolve_callback
+
+        return emitter
 
 class Emitter:
     def __init__(self, uuid: Optional[str] = None):
