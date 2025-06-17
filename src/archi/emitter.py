@@ -1,17 +1,18 @@
 import asyncio
-
+import logging
 from typing import Optional, Callable, TYPE_CHECKING
 from uuid6 import uuid7
 
 if TYPE_CHECKING:
     from broker import Broker
-    
+
+logger = logging.getLogger(__name__)
+
 class EmitterFactory:
     @staticmethod
     def create_emitter(uuid: Optional[str] = None, resolve_callback: Optional[Callable[[], None]] = None) -> "Emitter":
         emitter = Emitter(uuid)
         emitter.resolve_callback = resolve_callback
-
         return emitter
 
 class Emitter:
@@ -26,12 +27,11 @@ class Emitter:
             raise RuntimeError("Emitter has no broker.")
 
         # First emitter: begin coordination
-        if not self.broker.opened_section:
-            print(f"[Emitter {self.uuid}] emitting (starting session)...")
+        if not self.broker._session_opened:
+            logger.info(f"[Emitter {self.uuid}] emitting (starting session)...")
             await self.broker.collect_emit(self.uuid)
         else:
             # Called during a session — resolve immediately
-            
             async def wrapper():
                 self._resolve()
 
@@ -47,7 +47,6 @@ class Emitter:
         if self.resolve_callback:
             self.resolve_callback()
         self._resolved.set()
-        print(f"[Emitter {self.uuid}] resolving (finishing session)...")
-
+        logger.info(f"[Emitter {self.uuid}] resolving (finishing session)...")
 
 __all__ = ("Emitter",)

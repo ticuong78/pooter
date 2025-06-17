@@ -39,22 +39,24 @@ async def test_emitter_without_broker():
         await emitter.emit()
 
 @pytest.mark.asyncio
-async def test_emitter_in_section():
+async def test_emitter_timeout_with_broker():
+    broker = Broker(timeout=0.1)
+    asyncio.create_task(broker.start_big_session())
     emitter = Emitter()
-    broker = Broker()
     broker.register_emitter(emitter)
-    broker.opened_section = True
-    await emitter.emit()
-    assert emitter._resolved.is_set()
+    # Do not resolve emitter, should timeout
+    result = await broker.collect_emit(emitter.uuid)
+    assert result is False
 
 @pytest.mark.asyncio
-async def test_emitter_timeout():
-    broker = Broker(timeout=0.1)
-    emitter1 = Emitter()
-    emitter2 = Emitter()
-    broker.register_emitter(emitter1)
-    broker.register_emitter(emitter2)
-    # Only start one emitter, so the other never resolves
-    emit_task = asyncio.create_task(emitter1.emit())
-    await asyncio.sleep(0.2)
-    assert not emitter1._resolved.is_set()
+async def test_emitter_resolve_with_broker():
+    broker = Broker(timeout=0.2)
+    asyncio.create_task(broker.start_big_session())
+    emitter = Emitter()
+    broker.register_emitter(emitter)
+    # Start session and resolve
+    task = asyncio.create_task(broker.collect_emit(emitter.uuid))
+    await asyncio.sleep(0.05)
+    emitter._resolve()
+    result = await task
+    assert result is True
