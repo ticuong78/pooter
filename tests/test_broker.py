@@ -155,15 +155,15 @@ async def test_broker_consumes_with_multiple_emitters():
 @pytest.mark.asyncio
 async def test_broker_section_state_with_multiple_emitters():
     broker = Broker()
-    emitter = Emitter()
+    emitter1 = Emitter()
     emitter2 = Emitter()
-    broker.register_emitter(emitter)
+    broker.register_emitter(emitter1)
     broker.register_emitter(emitter2)
-    emit_task = asyncio.create_task(emitter.emit())
+    emit_task1 = asyncio.create_task(emitter1.emit())
     await asyncio.sleep(0.1)
     assert broker.opened_section
     emit_task2 = asyncio.create_task(emitter2.emit())
-    await asyncio.gather(emit_task, emit_task2)
+    await asyncio.gather(emit_task1, emit_task2)
     assert not broker.opened_section
 
 @pytest.mark.asyncio

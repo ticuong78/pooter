@@ -16,7 +16,10 @@ class Broker:
         self.emitter_factory = emitter_factory or EmitterFactory()
 
     def create_emitter(self, resolve_callback: Optional[Callable[[], None]] = None) -> Emitter:
-        return self.emitter_factory.create_emitter(resolve_callback=resolve_callback)
+        emitter = self.emitter_factory.create_emitter(resolve_callback=resolve_callback)
+        self.register_emitter(emitter)
+
+        return emitter
 
     def register_emitter(self, emitter: Emitter):
         self.emitters[emitter.uuid] = emitter
