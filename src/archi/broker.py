@@ -21,8 +21,8 @@ class Broker:
         self._session_opened = False
         self._session_lock = asyncio.Lock()
 
-    def create_emitter(self, resolve_callback: Optional[Callable[[], None]] = None) -> Emitter:
-        emitter = self.emitter_factory.create_emitter(resolve_callback=resolve_callback)
+    def create_emitter(self, uuid: Optional[str] = None, resolve_callback: Optional[Callable[[], None]] = None) -> Emitter:
+        emitter = self.emitter_factory.create_emitter(uuid, resolve_callback)
         self.register_emitter(emitter)
         return emitter
 

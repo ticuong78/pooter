@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pooter"
-version = "0.2.4"
+version = "0.2.5"
 description = "Async coordination system using Broker-Emitter-Consumer with testing, we simply call it: \"Event Architecture based on Promises\""
 readme = "README.md"
 requires-python = ">=3.11"
