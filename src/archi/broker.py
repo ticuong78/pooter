@@ -92,8 +92,6 @@ class Broker:
                 logger.warning(f"[Broker] Not all emitters resolved. Unresolved: {unresolved}")
 
             # Clean up state
-            for uuid in list(self.emitted):
-                self.emitters.pop(uuid, None)
             self._emitter_tasks.clear()
             self.emitted.clear()
 
