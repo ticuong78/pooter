@@ -177,3 +177,36 @@ async def test_broker_timeout_with_multiple_emitters():
     await asyncio.sleep(0.2)
     assert not broker.opened_section
     assert not broker.emitted
+
+@pytest.mark.asyncio
+async def test_collect_emit_returns_true_on_success():
+    broker = Broker()
+    emitter1 = Emitter()
+    emitter2 = Emitter()
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
+
+    # Start collect_emit for emitter1
+    collect_task = asyncio.create_task(broker.collect_emit(emitter1.uuid))
+    await asyncio.sleep(0.05)
+    # Resolve emitter2 to allow collect_emit to finish
+    emitter2._resolve()
+    result = await collect_task
+
+    assert result is True
+    assert not broker.opened_section
+    assert not broker.emitted
+
+@pytest.mark.asyncio
+async def test_collect_emit_returns_false_on_timeout():
+    broker = Broker(timeout=0.1)
+    emitter1 = Emitter()
+    emitter2 = Emitter()
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
+
+    # Only resolve one emitter, so the other will timeout
+    result = await broker.collect_emit(emitter1.uuid)
+    assert result is False
+    assert not broker.opened_section
+    assert not broker.emitted

@@ -32,14 +32,18 @@ class Broker:
     async def collect_emit(self, uuid: str):
         self.opened_section = True
         self.emitted.add(uuid)
-        pending = [e for k, e in self.emitters.items() if k not in self.emitted]    
+        pending = [e for k, e in self.emitters.items() if k not in self.emitted]
 
         try:
             await asyncio.gather(*[e.await_resolution(timeout=self.timeout) for e in pending])
             print("[Broker] All emitters resolved. Broadcasting to consumers...")
             await self.event_bus.emit("all_resolved")
+
+            return True
         except Exception as e:
             print(f"[Broker] Error during coordination: {e}")
+
+            return False
         finally:
             # Only clear state if this was the last emitter
             self.emitted.clear()
