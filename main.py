@@ -37,7 +37,8 @@ async def main():
         emitter3.resolve_callback = lambda uuid=emitter3.uuid: print(f"[Emitter {uuid}] internal resolved.")
         broker.register_emitter(emitter3)
 
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(0.4) # this should be enough to resolve emitter3
+        # await asyncio.sleep(0.4) # otherwise, this will be ignored
         await emitter3.emit()
 
     await asyncio.gather(emitter1_task, emit_emitter2(), register_and_emit_emitter3())

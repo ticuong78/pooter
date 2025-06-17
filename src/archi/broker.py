@@ -49,7 +49,7 @@ class Broker:
     async def collect_emit(self, uuid: str):
         if self.emitters.get(uuid) is None:
             logger.warning(f"[Broker] Ignoring emitter {uuid} — no longer part of coordination.")
-            return
+            return False
 
         async with self._session_lock:
             logger.info(f"[Broker] Starting coordination session. First emitter: {uuid}")
