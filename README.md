@@ -54,18 +54,13 @@ from src.archi.broker import Broker
 from src.archi.emitter import Emitter
 from src.archi.consumer import Consumer
 
-# Set up logging for visibility
 logging.basicConfig(level=logging.INFO)
 
 async def main():
     broker = Broker(timeout=1.0)
 
-    emitter1 = Emitter()
-    emitter2 = Emitter()
-
-    # decide what the Emitters do on resolve_callback
-    emitter2.resolve_callback = lambda uuid=emitter2.uuid: print(f"[Emitter {uuid}] internal resolved.") 
-
+    emitter1 = Emitter("ONE")
+    emitter2 = Emitter("TWO")
     consumer1 = Consumer()
     consumer2 = Consumer()
 
@@ -74,18 +69,30 @@ async def main():
     broker.register_consumer(consumer1)
     broker.register_consumer(consumer2)
 
-    # Use the awaited API (Option A)
+    # Start emitter1 (this starts the coordination session)
     emitter1_task = emitter1.emit()  # async def emit()
-    
-    # Resolve the other emitter after delay
-    async def delayed():
-        await asyncio.sleep(0.3)
+
+    # Emit emitter2 before timeout
+    async def emit_emitter2():
+        await asyncio.sleep(0.2)
         await emitter2.emit()
 
-    await asyncio.gather(delayed(), emitter1_task)
+    # Register emitter3 after session starts, then emit
+    async def register_and_emit_emitter3():
+        await asyncio.sleep(0.3)  # after session starts
+        emitter3 = Emitter("THREE")
+        emitter3.resolve_callback = lambda uuid=emitter3.uuid: print(f"[Emitter {uuid}] internal resolved.")
+        broker.register_emitter(emitter3)
+
+        await asyncio.sleep(0.4) # this should be enough to resolve emitter3
+        # await asyncio.sleep(0.4) # otherwise, this will be ignored
+        await emitter3.emit()
+
+    await asyncio.gather(emitter1_task, emit_emitter2(), register_and_emit_emitter3())
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 ```
 
 ---
