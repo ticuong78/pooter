@@ -10,12 +10,19 @@ from src.archi.consumer import Consumer
 logging.basicConfig(level=logging.INFO)
 
 async def main():
+    async def callback_consumer():
+        await asyncio.sleep(0.5)
+        print("Dũng xấu trai")
+    
+    def callback_consumer_2():
+        print("Quyên đẹp trai")
+    
     broker = Broker(timeout=1.0)
 
     emitter1 = Emitter("ONE")
     emitter2 = Emitter("TWO")
-    consumer1 = Consumer()
-    consumer2 = Consumer()
+    consumer1 = Consumer(callback=callback_consumer)
+    consumer2 = Consumer(callback=callback_consumer_2)
 
     broker.register_emitter(emitter1)
     broker.register_emitter(emitter2)

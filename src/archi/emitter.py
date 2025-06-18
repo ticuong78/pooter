@@ -26,22 +26,31 @@ class Emitter:
         if not self.broker:
             raise RuntimeError("Emitter has no broker.")
 
-        try:
-            # First emitter: begin coordination
-            if not self.broker._session_opened:
-                logger.info(f"[Emitter {self.uuid}] emitting (starting session)...")
-                return await self.broker.collect_emit(self.uuid)
-            else:
-                # Called during a session — resolve immediately
-                async def wrapper():
-                    self._resolve()
+        # try:
+        # First emitter: begin coordination
+        if not self.broker._session_opened:
+            logger.info(f"[Emitter {self.uuid}] emitting (starting session)...")
 
-                await wrapper()
+            if self.broker is None:
+                print("Broker none rồi")
 
-                return True
-        except Exception as e:
-            logger.error(f"[Emitter {self.uuid}] Error emitting: {e}")
-            return False
+            result = await self.broker.collect_emit(self.uuid)
+
+            if self.broker is None:
+                print("Broker none lúc sau rồi")
+
+            return result
+        else:
+            # Called during a session — resolve immediately
+            async def wrapper():
+                self._resolve()
+
+            await wrapper()
+
+            return True
+        # except Exception as e:
+        #     logger.error(f"[Emitter {self.uuid}] Error emitting: {e}")
+        #     return False
 
     async def await_resolution(self, timeout: float):
         try:
