@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
+from uuid6 import uuid7
 
 from .emitter import Emitter, EmitterFactory
 from .consumer import Consumer
@@ -8,8 +9,71 @@ from .event import EventBus
 
 logger = logging.getLogger(__name__)
 
+class BrokerFactory:
+    @staticmethod
+    def create_broker(
+        uuid: Optional[str] = None,
+        timeout: float = 1.0,
+        event_bus: Optional[EventBus] = None,
+        emitter_factory: Optional[EmitterFactory] = None
+    ) -> "Broker":
+        return Broker(
+            uuid=uuid or str(uuid7()),
+            timeout=timeout,
+            event_bus=event_bus or EventBus(),
+            emitter_factory=emitter_factory or EmitterFactory()
+        )
+
+class BrokerManager:
+    def __init__(self):
+        self._brokers: Dict[str, Broker] = {}
+
+    def create_broker(self, uuid: Optional[str] = None, timeout: float = 1.0):
+        broker = BrokerFactory.create_broker(uuid=uuid, timeout=timeout)
+        if broker.uuid in self._brokers:
+            raise ValueError(f"Broker with UUID {broker.uuid} already exists.")
+
+        self._brokers[broker.uuid] = broker
+        logger.info(f"[BrokerManager] Created and added broker with UUID: {broker.uuid}")
+        return broker
+
+    def register_broker(self, broker: "Broker"):
+        # Tạo broker qua factory
+        if broker.uuid in self._brokers:
+            raise ValueError(f"Broker with UUID {broker.uuid} already exists.")
+
+        self._brokers[broker.uuid] = broker
+        logger.info(f"[BrokerManager] Created and added broker with UUID: {broker.uuid}")
+
+    def get_broker(self, uuid: str) -> Optional["Broker"]:
+        return self._brokers.get(uuid)
+
+    def remove_broker(self, uuid: str) -> bool:
+        if uuid in self._brokers:
+            del self._brokers[uuid]
+            logger.info(f"[BrokerManager] Removed broker with UUID: {uuid}")
+            return True
+        return False
+
+    def register_emitter_to(self, broker_uuid: str, emitter: Emitter):
+        broker = self.get_broker(broker_uuid)
+        if not broker:
+            raise ValueError(f"No broker found with UUID: {broker_uuid}")
+        broker.register_emitter(emitter)
+        logger.info(f"[BrokerManager] Registered emitter {emitter.uuid} to broker {broker_uuid}")
+
+    def update_broker_timeout(self, uuid: str, timeout: float):
+        broker = self.get_broker(uuid)
+        if broker:
+            broker.timeout = timeout
+            logger.info(f"[BrokerManager] Updated timeout for broker {uuid} to {timeout}")
+
+    def get_all_brokers(self) -> list["Broker"]:
+        return list(self._brokers.values())
+
 class Broker:
-    def __init__(self, timeout: float = 1.0, event_bus: Optional[EventBus] = None, emitter_factory: Optional[EmitterFactory] = None):
+    def __init__(self, uuid: Optional[str] = None, timeout: float = 1.0, event_bus: Optional[EventBus] = None, emitter_factory: Optional[EmitterFactory] = None):
+        self.uuid = uuid or str(uuid7())
         self.timeout = timeout
         self.emitters: dict[str, Emitter] = {}
         self.emitted: set[str] = set()
@@ -27,13 +91,16 @@ class Broker:
         return emitter
 
     def register_emitter(self, emitter: Emitter):
-        self.emitters[emitter.uuid] = emitter
-        emitter.broker = self  # type: ignore
+        if emitter.broker is not None and emitter.broker is not self:
+            logger.warning(f"[Broker {self.uuid}] Cannot register emitter {emitter.uuid}: already attached to another broker.")
+            return
 
         if self._session_opened:
-            logger.info(f"[Broker] Emitter {emitter.uuid} registered during session.")
-            task = asyncio.create_task(self._wait_and_collect(emitter))
-            self._emitter_tasks[emitter.uuid] = task
+            logger.warning(f"[Broker {self.uuid}] Broker is opening a session, please register again later.")
+            return
+
+        self.emitters[emitter.uuid] = emitter
+        emitter.broker = self
 
     def unregister_emitter(self, emitter: Emitter):
         self.emitters.pop(emitter.uuid)
@@ -56,46 +123,22 @@ class Broker:
             logger.error(f"[Broker] Error awaiting emitter {emitter.uuid}: {e}")
 
     async def collect_emit(self, uuid: str):
-        if self.emitters.get(uuid) is None:
-            logger.warning(f"[Broker] Ignoring emitter {uuid} — no longer part of coordination.")
-            return False
-
         async with self._session_lock:
-            logger.info(f"[Broker] Starting coordination session. First emitter: {uuid}")
             self._session_opened = True
             self.emitted.add(uuid)
 
-            # Track all current emitters at session start
-            for e_uuid, emitter in self.emitters.items():
-                if e_uuid not in self.emitted and e_uuid not in self._emitter_tasks:
-                    task = asyncio.create_task(self._wait_and_collect(emitter))
-                    self._emitter_tasks[e_uuid] = task
+            pending = [e for k, e in self.emitters.items() if k not in self.emitted]
 
-            # Wait for the entire timeout window
-            await asyncio.sleep(self.timeout)
-
-            self._session_opened = False
-            logger.info(f"[Broker] Session ended after {self.timeout} seconds. Checking emitters...")
-
-            # Cancel any remaining uncompleted tasks
-            for uuid, task in self._emitter_tasks.items():
-                if not task.done():
-                    task.cancel()
-
-            all_resolved = len(self.emitted) == len(self.emitters)
-
-            if all_resolved:
-                logger.info("[Broker] All emitters resolved. Broadcasting to consumers...")
+            try:
+                await asyncio.gather(*[e.await_resolution(timeout=self.timeout) for e in pending])
+                print("[Broker] All emitters resolved. Broadcasting to consumers...")
                 await self.event_bus.emit("all_resolved")
-            else:
-                unresolved = set(self.emitters.keys()) - self.emitted
-                logger.warning(f"[Broker] Not all emitters resolved. Unresolved: {unresolved}")
-
-            # Clean up state
-            self._emitter_tasks.clear()
-            self.emitted.clear()
-
-            logger.info("[Broker] Coordination session closed.")
-            return all_resolved
+                return True
+            except Exception as e:
+                print(f"[Broker] Error during coordination: {e}")
+                return False
+            finally:
+                self._session_opened = False
+                self.emitted.clear()
 
 __all__ = ("Broker",)
