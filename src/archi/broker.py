@@ -142,4 +142,4 @@ class Broker:
                 self._session_opened = False
                 self.emitted.clear()
 
-__all__ = ("Broker",)
+__all__ = ("Broker", "BrokerManager", "BrokerFactory")
