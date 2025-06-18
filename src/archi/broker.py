@@ -63,6 +63,13 @@ class BrokerManager:
         broker.register_emitter(emitter)
         logger.info(f"[BrokerManager] Registered emitter {emitter.uuid} to broker {broker_uuid}")
 
+    def register_consumer_to(self, broker_uuid: str, consumer: Consumer):
+        broker = self.get_broker(broker_uuid)
+        if not broker:
+            raise ValueError(f"No broker found with UUID: {broker_uuid}")
+        broker.register_consumer(consumer)
+        logger.info(f"[BrokerManager] Registered consumer {consumer.uuid} to broker {broker_uuid}")
+
     def update_broker_timeout(self, uuid: str, timeout: float):
         broker = self.get_broker(uuid)
         if broker:
