@@ -29,9 +29,10 @@ class BrokerManager:
         self._brokers: Dict[str, Broker] = {}
 
     def create_broker(self, uuid: Optional[str] = None, timeout: float = 1.0):
+        if uuid in self._brokers:
+            return self.get_broker(uuid)
+
         broker = BrokerFactory.create_broker(uuid=uuid, timeout=timeout)
-        if broker.uuid in self._brokers:
-            raise ValueError(f"Broker with UUID {broker.uuid} already exists.")
 
         self._brokers[broker.uuid] = broker
         logger.info(f"[BrokerManager] Created and added broker with UUID: {broker.uuid}")
