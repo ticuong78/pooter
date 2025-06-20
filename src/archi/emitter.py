@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Callable, TYPE_CHECKING
+from typing import Optional, Callable, TYPE_CHECKING, Any
 from uuid6 import uuid7
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ class Emitter:
         self._resolved = asyncio.Event()
         self.resolve_callback: Optional[Callable[[], None]] = None
 
-    async def emit(self):
+    async def emit(self, payload: Optional[Any] = None):
         if not self.broker:
             raise RuntimeError("Emitter has no broker.")
 
@@ -34,7 +34,7 @@ class Emitter:
                 if self.broker is None:
                     print("Broker none rồi")
 
-                result = await self.broker.collect_emit(self.uuid)
+                result = await self.broker.collect_emit(self.uuid, payload)
 
                 if self.broker is None:
                     print("Broker none lúc sau rồi")

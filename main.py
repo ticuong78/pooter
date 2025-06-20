@@ -10,45 +10,33 @@ from src.archi.consumer import Consumer
 logging.basicConfig(level=logging.INFO)
 
 async def main():
-    async def callback_consumer():
-        await asyncio.sleep(0.5)
-        print("Dũng xấu trai")
-    
-    def callback_consumer_2():
-        print("Quyên đẹp trai")
-    
-    broker = Broker(timeout=1.0)
+    broker = Broker(timeout=5)
 
-    emitter1 = Emitter("ONE")
-    emitter2 = Emitter("TWO")
-    consumer1 = Consumer(callback=callback_consumer)
-    consumer2 = Consumer(callback=callback_consumer_2)
+    # Create consumer instances
+    consumer1 = Consumer("Consumer1")
+    consumer2 = Consumer("Consumer2")
 
-    broker.register_emitter(emitter1)
-    broker.register_emitter(emitter2)
+    # Register consumers to the broker
     broker.register_consumer(consumer1)
     broker.register_consumer(consumer2)
 
-    # Start emitter1 (this starts the coordination session)
-    emitter1_task = emitter1.emit()  # async def emit()
+    # Create emitters and register them to the broker
+    emitter1 = Emitter(uuid="emitter1")
+    emitter2 = Emitter(uuid="emitter2")
+    broker.register_emitter(emitter1)
+    broker.register_emitter(emitter2)
 
-    # Emit emitter2 before timeout
-    async def emit_emitter2():
-        await asyncio.sleep(0.2)
+    task = emitter1.emit({ "message": "Message one" })
+
+    async def simulate_payloads():
         await emitter2.emit()
 
-    # Register emitter3 after session starts, then emit
-    async def register_and_emit_emitter3():
-        await asyncio.sleep(0.3)  # after session starts
-        emitter3 = Emitter("THREE")
-        emitter3.resolve_callback = lambda uuid=emitter3.uuid: print(f"[Emitter {uuid}] internal resolved.")
-        broker.register_emitter(emitter3)
+    # Run the simulation
+    await asyncio.gather(task, simulate_payloads())
 
-        await asyncio.sleep(0.4) # this should be enough to resolve emitter3
-        # await asyncio.sleep(0.4) # otherwise, this will be ignored
-        await emitter3.emit()
-
-    await asyncio.gather(emitter1_task, emit_emitter2(), register_and_emit_emitter3())
+    # After the payloads are emitted, check if consumers received them
+    print(f"Consumer1 received: {consumer1.payload}")
+    print(f"Consumer2 received: {consumer2.payload}")
 
 if __name__ == "__main__":
     asyncio.run(main())

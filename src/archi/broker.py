@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Callable, Dict
+from typing import Optional, Callable, Dict, Any
 from uuid6 import uuid7
 
 from .emitter import Emitter, EmitterFactory
@@ -89,6 +89,7 @@ class Broker:
         self.event_bus = event_bus or EventBus()
         self.emitter_factory = emitter_factory or EmitterFactory()
 
+        self._payload = []
         self._emitter_tasks: dict[str, asyncio.Task] = {}
         self._session_opened = False
         self._session_lock = asyncio.Lock()
@@ -130,17 +131,18 @@ class Broker:
         except Exception as e:
             logger.error(f"[Broker] Error awaiting emitter {emitter.uuid}: {e}")
 
-    async def collect_emit(self, uuid: str):
+    async def collect_emit(self, uuid: str, payload: Any):
         async with self._session_lock:
             self._session_opened = True
             self.emitted.add(uuid)
+            self._payload.append(payload)
 
             pending = [e for k, e in self.emitters.items() if k not in self.emitted]
 
             try:
                 await asyncio.gather(*[e.await_resolution(timeout=self.timeout) for e in pending])
                 print("[Broker] All emitters resolved. Broadcasting to consumers...")
-                await self.event_bus.emit("all_resolved")
+                await self.event_bus.emit("all_resolved", self._payload)
                 return True
             except Exception as e:
                 print(f"[Broker] Error during coordination: {e}")
